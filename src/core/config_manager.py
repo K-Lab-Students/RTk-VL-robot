@@ -1,5 +1,8 @@
 """
-Configuration Manager - Handles loading and managing robot configuration.
+Configuration Management System
+
+Handles loading, saving, and accessing robot configuration parameters
+with support for YAML files and default fallback values.
 """
 
 import os
@@ -11,13 +14,24 @@ from utils.logger import setup_logger
 
 
 class ConfigManager:
-    """Manages robot configuration settings."""
+    """
+    Manages robot configuration settings with YAML persistence.
     
-    def __init__(self, config_path: str = None):
-        """Initialize the configuration manager.
+    Provides centralized configuration management with automatic defaults,
+    file I/O, and dot-notation access to nested configuration values.
+    
+    Attributes:
+        config_path: Path to the configuration YAML file
+        config: Current configuration dictionary
+        logger: Logger instance for configuration operations
+    """
+    
+    def __init__(self, config_path: str = "config/robot_config.yaml"):
+        """
+        Initialize configuration manager.
         
         Args:
-            config_path: Path to configuration file
+            config_path: Path to configuration file, defaults to standard location
         """
         self.logger = setup_logger(__name__)
         
@@ -30,15 +44,22 @@ class ConfigManager:
         self.config: Dict[str, Any] = {}
         
     def load_config(self) -> Dict[str, Any]:
-        """Load configuration from file.
+        """
+        Load configuration from file with fallback to defaults.
+        
+        Attempts to load from the specified file, falling back to default
+        configuration if the file doesn't exist or is invalid.
         
         Returns:
-            Configuration dictionary
+            Complete configuration dictionary
+            
+        Raises:
+            RuntimeError: If both file loading and default generation fail
         """
         try:
             if self.config_path.exists():
                 with open(self.config_path, 'r') as f:
-                    self.config = yaml.safe_load(f)
+                    self.config = yaml.safe_load(f) or {}
                 self.logger.info(f"Configuration loaded from {self.config_path}")
             else:
                 self.logger.warning(f"Config file not found at {self.config_path}, using defaults")
@@ -49,11 +70,20 @@ class ConfigManager:
             
         except Exception as e:
             self.logger.error(f"Failed to load configuration: {e}")
+            self.logger.info("Falling back to default configuration")
             self.config = self._get_default_config()
             return self.config
     
     def save_config(self):
-        """Save current configuration to file."""
+        """
+        Save current configuration to file.
+        
+        Creates the configuration directory if it doesn't exist and writes
+        the current configuration to the YAML file with proper formatting.
+        
+        Raises:
+            IOError: If file cannot be written
+        """
         try:
             # Ensure config directory exists
             self.config_path.parent.mkdir(parents=True, exist_ok=True)
@@ -67,14 +97,26 @@ class ConfigManager:
             self.logger.error(f"Failed to save configuration: {e}")
     
     def get(self, key: str, default=None):
-        """Get configuration value by key.
+        """
+        Get configuration value using dot notation.
+        
+        Supports nested key access using dot notation (e.g., 'robot.name').
+        Returns the default value if the key path doesn't exist.
         
         Args:
-            key: Configuration key (supports dot notation)
+            key: Configuration key path with dot notation support
             default: Default value if key not found
             
         Returns:
-            Configuration value
+            Configuration value or default if not found
+            
+        Examples:
+            >>> config.get('robot.name')
+            'RTK-VL Robot'
+            >>> config.get('dynamixel.motors.base_rotation.id')
+            1
+            >>> config.get('nonexistent.key', 'fallback')
+            'fallback'
         """
         keys = key.split('.')
         value = self.config
@@ -87,11 +129,19 @@ class ConfigManager:
             return default
     
     def set(self, key: str, value: Any):
-        """Set configuration value by key.
+        """
+        Set configuration value using dot notation.
+        
+        Creates nested dictionary structure as needed to accommodate
+        the key path. Modifies the in-memory configuration only.
         
         Args:
-            key: Configuration key (supports dot notation)
-            value: Value to set
+            key: Configuration key path with dot notation support
+            value: Value to set at the specified path
+            
+        Examples:
+            >>> config.set('robot.name', 'New Robot Name')
+            >>> config.set('new.nested.value', 42)
         """
         keys = key.split('.')
         config = self.config
@@ -106,10 +156,14 @@ class ConfigManager:
         config[keys[-1]] = value
     
     def _get_default_config(self) -> Dict[str, Any]:
-        """Get default configuration.
+        """
+        Generate default configuration structure.
+        
+        Provides comprehensive default settings for all robot subsystems
+        including hardware interfaces and operational parameters.
         
         Returns:
-            Default configuration dictionary
+            Default configuration dictionary with all required sections
         """
         return {
             'robot': {
