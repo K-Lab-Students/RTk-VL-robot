@@ -1,0 +1,68 @@
+robot:
+  name: "RTK-VL Robot"
+  version: "1.0.0"
+  control_frequency: 100  # Hz
+
+dynamixel:
+  enabled: true
+  port: "/dev/ttyUSB0"
+  baudrate: 1000000
+  protocol_version: 2.0
+  motors:
+    base_rotation:
+      id: 1
+      model: "XM430-W350"
+    shoulder:
+      id: 2
+      model: "XM430-W350"
+    elbow:
+      id: 3
+      model: "XM430-W350"
+    wrist:
+      id: 4
+      model: "XM430-W350"
+
+lidar:
+  enabled: true
+  type: "rplidar"
+  port: "/dev/ttyUSB1"
+  baudrate: 115200
+  scan_frequency: 10  # Hz
+  max_distance: 12.0  # meters
+
+camera:
+  enabled: true
+  devices:
+    - id: 0
+      name: "front_camera"
+      resolution: [640, 480]
+      fps: 30
+
+npu:
+  enabled: false
+  type: "coral"  # 'coral', 'jetson', or 'cpu'
+  model_path: "models/detection_model.tflite"
+
+vision:
+  object_detection:
+    enabled: true
+    confidence_threshold: 0.5
+    nms_threshold: 0.4
+  face_recognition:
+    enabled: false
+    database_path: "data/faces"
+
+navigation:
+  slam:
+    enabled: true
+    map_resolution: 0.05  # meters per pixel
+    map_size: [2000, 2000]  # pixels
+  path_planning:
+    algorithm: "a_star"
+    safety_margin: 0.3  # meters
+
+logging:
+  level: "INFO"
+  file: "data/logs/robot.log"
+  max_size: "10MB"
+  backup_count: 5 
