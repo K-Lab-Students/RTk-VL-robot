@@ -20,10 +20,8 @@ def setup_logger(name: str, level: str = "INFO", log_file: Optional[str] = None)
     Returns:
         Configured logger instance
     """
-    # Remove default loguru handler
     logger.remove()
     
-    # Console handler with colors
     logger.add(
         sys.stderr,
         format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
